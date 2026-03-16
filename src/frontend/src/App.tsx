@@ -1,19 +1,19 @@
 import { Toaster } from "@/components/ui/sonner";
 import { motion } from "motion/react";
-import { AlertTradeLog } from "./components/AlertTradeLog";
-import { CodeReference } from "./components/CodeReference";
-import { ConfigPanel } from "./components/ConfigPanel";
-import { PipelineDiagram } from "./components/PipelineDiagram";
+import { AdminControlPanel } from "./components/AdminControlPanel";
+import { AuditLogTable } from "./components/AuditLogTable";
+import { PipelineStatusBar } from "./components/PipelineStatusBar";
+import { TestWebhookPanel } from "./components/TestWebhookPanel";
 
 export default function App() {
   return (
     <div className="min-h-screen bg-background bg-grid relative">
-      {/* ambient glow */}
+      {/* Ambient glow top */}
       <div
         className="pointer-events-none fixed inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 70% 40% at 50% 0%, oklch(0.18 0.06 200 / 0.18) 0%, transparent 65%)",
+            "radial-gradient(ellipse 80% 35% at 50% 0%, oklch(0.18 0.06 200 / 0.15) 0%, transparent 60%)",
         }}
       />
       <Toaster
@@ -28,25 +28,24 @@ export default function App() {
         }}
       />
 
-      <div className="relative mx-auto max-w-7xl px-4 py-10">
-        {/* ── Header ── */}
+      <div className="relative mx-auto max-w-7xl px-4 py-8">
+        {/* Header */}
         <motion.header
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-10"
+          transition={{ duration: 0.4 }}
+          className="mb-8"
         >
-          <div className="flex items-start gap-4">
-            <div className="mt-1 rounded-xl border border-accent/30 bg-accent/10 p-2.5">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg border border-accent/30 bg-accent/10 p-2">
               <svg
-                className="h-6 w-6 text-accent"
+                className="h-5 w-5 text-accent"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
                 aria-hidden="true"
-                role="img"
               >
-                <title>Secure pipeline shield</title>
+                <title>Shield icon</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -56,72 +55,69 @@ export default function App() {
               </svg>
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                TradingView → Webhook → Caffeine → Binance
+              <h1 className="font-display text-xl font-bold tracking-tight text-foreground">
+                Trading Pipeline Admin
               </h1>
-              <p className="mt-1 text-sm text-muted-foreground font-mono">
-                SECURE TRADING PIPELINE · ARCHITECTURE REFERENCE
+              <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                TradingView → Webhook → Caffeine → Binance · Phase 1
               </p>
-              <p className="mt-2 text-xs text-muted-foreground max-w-2xl leading-relaxed">
-                A senior developer’s blueprint for wiring TradingView Pine
-                Script alerts through a hardened webhook receiver to automated
-                Binance order execution — with every security layer documented.
-              </p>
+            </div>
+            <div className="ml-auto">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 font-mono text-[10px] text-accent tracking-widest uppercase">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+                Live
+              </span>
             </div>
           </div>
         </motion.header>
 
-        {/* ── Section 1: Pipeline Diagram ── */}
+        {/* Pipeline Status Bar */}
         <motion.section
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="mb-10"
-          aria-label="Pipeline Diagram"
+          transition={{ duration: 0.4, delay: 0.05 }}
+          className="mb-6"
+          aria-label="Pipeline Status"
         >
-          <SectionLabel step={1} label="SYSTEM PIPELINE" />
-          <PipelineDiagram />
+          <PipelineStatusBar />
         </motion.section>
 
-        {/* ── Section 2: Configuration Panel ── */}
+        {/* Admin Control Panel */}
         <motion.section
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-10"
-          aria-label="Configuration Panel"
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="mb-6"
+          aria-label="Admin Control Panel"
         >
-          <SectionLabel step={2} label="CONFIGURATION & KILL SWITCH" />
-          <ConfigPanel />
+          <AdminControlPanel />
         </motion.section>
 
-        {/* ── Section 3: Alert & Trade Logs ── */}
+        {/* Audit Log Table */}
         <motion.section
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mb-10"
-          aria-label="Alert and Trade Logs"
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="mb-6"
+          aria-label="Audit Log"
         >
-          <SectionLabel step={3} label="ALERT LOG & TRADE LOG" />
-          <AlertTradeLog />
+          <AuditLogTable />
         </motion.section>
 
-        {/* ── Section 4: Code Reference ── */}
+        {/* Test Webhook Panel */}
         <motion.section
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="mb-10"
-          aria-label="Architecture Code Reference"
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="mb-8"
+          aria-label="Test Webhook"
         >
-          <SectionLabel step={4} label="ARCHITECTURE CODE REFERENCE" />
-          <CodeReference />
+          <TestWebhookPanel />
         </motion.section>
 
-        {/* ── Footer ── */}
-        <footer className="text-center pt-4 border-t border-border/30">
-          <p className="text-xs text-muted-foreground/50 font-mono">
+        {/* Footer */}
+        <footer className="border-t border-border/30 pt-4 text-center">
+          <p className="font-mono text-[11px] text-muted-foreground/50">
             © {new Date().getFullYear()}. Built with ♥ using{" "}
             <a
               href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
@@ -134,20 +130,6 @@ export default function App() {
           </p>
         </footer>
       </div>
-    </div>
-  );
-}
-
-function SectionLabel({ step, label }: { step: number; label: string }) {
-  return (
-    <div className="flex items-center gap-3 mb-4">
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/20 border border-accent/40 font-mono text-[10px] font-bold text-accent">
-        {step}
-      </span>
-      <span className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-        {label}
-      </span>
-      <div className="flex-1 h-px bg-border/40" />
     </div>
   );
 }

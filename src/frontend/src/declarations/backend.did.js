@@ -8,96 +8,87 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const AlertRecord = IDL.Record({
-  'timestamp' : IDL.Int,
-  'price' : IDL.Float64,
-  'rsiValue' : IDL.Float64,
+export const UserRole = IDL.Variant({
+  'admin' : IDL.Null,
+  'user' : IDL.Null,
+  'guest' : IDL.Null,
 });
-export const http_header = IDL.Record({
-  'value' : IDL.Text,
-  'name' : IDL.Text,
+export const AuditLogEntry = IDL.Record({
+  'status' : IDL.Text,
+  'side' : IDL.Text,
+  'alertId' : IDL.Text,
+  'receivedAt' : IDL.Int,
+  'timestamp' : IDL.Text,
+  'signal' : IDL.Text,
+  'symbol' : IDL.Text,
+  'reason' : IDL.Text,
 });
-export const http_request_result = IDL.Record({
-  'status' : IDL.Nat,
-  'body' : IDL.Vec(IDL.Nat8),
-  'headers' : IDL.Vec(http_header),
-});
-export const TransformationInput = IDL.Record({
-  'context' : IDL.Vec(IDL.Nat8),
-  'response' : http_request_result,
-});
-export const TransformationOutput = IDL.Record({
-  'status' : IDL.Nat,
-  'body' : IDL.Vec(IDL.Nat8),
-  'headers' : IDL.Vec(http_header),
-});
+export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 
 export const idlService = IDL.Service({
-  'checkAndLogAlert' : IDL.Func([IDL.Float64, IDL.Float64], [], []),
-  'clearAlertHistory' : IDL.Func([], [], []),
-  'getAlertHistory' : IDL.Func([], [IDL.Vec(AlertRecord)], ['query']),
-  'getBitcoinData' : IDL.Func(
-      [],
-      [
-        IDL.Record({
-          'rsi' : IDL.Float64,
-          'timestamp' : IDL.Int,
-          'price' : IDL.Float64,
-        }),
-      ],
-      [],
-    ),
-  'transform' : IDL.Func(
-      [TransformationInput],
-      [TransformationOutput],
+  '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'getAuditLog' : IDL.Func([], [IDL.Vec(AuditLogEntry)], ['query']),
+  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+  'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getKillSwitchStatus' : IDL.Func([], [IDL.Bool], ['query']),
+  'getUserProfile' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'receiveWebhook' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Text],
+      [],
+    ),
+  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'setKillSwitch' : IDL.Func([IDL.Bool], [], []),
+  'setWebhookSecret' : IDL.Func([IDL.Text], [], []),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
-  const AlertRecord = IDL.Record({
-    'timestamp' : IDL.Int,
-    'price' : IDL.Float64,
-    'rsiValue' : IDL.Float64,
+  const UserRole = IDL.Variant({
+    'admin' : IDL.Null,
+    'user' : IDL.Null,
+    'guest' : IDL.Null,
   });
-  const http_header = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
-  const http_request_result = IDL.Record({
-    'status' : IDL.Nat,
-    'body' : IDL.Vec(IDL.Nat8),
-    'headers' : IDL.Vec(http_header),
+  const AuditLogEntry = IDL.Record({
+    'status' : IDL.Text,
+    'side' : IDL.Text,
+    'alertId' : IDL.Text,
+    'receivedAt' : IDL.Int,
+    'timestamp' : IDL.Text,
+    'signal' : IDL.Text,
+    'symbol' : IDL.Text,
+    'reason' : IDL.Text,
   });
-  const TransformationInput = IDL.Record({
-    'context' : IDL.Vec(IDL.Nat8),
-    'response' : http_request_result,
-  });
-  const TransformationOutput = IDL.Record({
-    'status' : IDL.Nat,
-    'body' : IDL.Vec(IDL.Nat8),
-    'headers' : IDL.Vec(http_header),
-  });
+  const UserProfile = IDL.Record({ 'name' : IDL.Text });
   
   return IDL.Service({
-    'checkAndLogAlert' : IDL.Func([IDL.Float64, IDL.Float64], [], []),
-    'clearAlertHistory' : IDL.Func([], [], []),
-    'getAlertHistory' : IDL.Func([], [IDL.Vec(AlertRecord)], ['query']),
-    'getBitcoinData' : IDL.Func(
-        [],
-        [
-          IDL.Record({
-            'rsi' : IDL.Float64,
-            'timestamp' : IDL.Int,
-            'price' : IDL.Float64,
-          }),
-        ],
-        [],
-      ),
-    'transform' : IDL.Func(
-        [TransformationInput],
-        [TransformationOutput],
+    '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'getAuditLog' : IDL.Func([], [IDL.Vec(AuditLogEntry)], ['query']),
+    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+    'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getKillSwitchStatus' : IDL.Func([], [IDL.Bool], ['query']),
+    'getUserProfile' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'receiveWebhook' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Text],
+        [],
+      ),
+    'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'setKillSwitch' : IDL.Func([IDL.Bool], [], []),
+    'setWebhookSecret' : IDL.Func([IDL.Text], [], []),
   });
 };
 

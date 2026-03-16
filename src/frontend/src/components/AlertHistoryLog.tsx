@@ -3,7 +3,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bell, History, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import type { AlertRecord } from "../backend.d";
+
+interface AlertRecord {
+  timestamp: bigint;
+  rsi: number;
+  rsiValue: number;
+  price: number;
+  alertType: string;
+}
 
 interface AlertHistoryLogProps {
   alerts: AlertRecord[];

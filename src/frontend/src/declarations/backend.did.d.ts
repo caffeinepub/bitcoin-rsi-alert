@@ -10,35 +10,36 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export interface AlertRecord {
-  'timestamp' : bigint,
-  'price' : number,
-  'rsiValue' : number,
+export interface AuditLogEntry {
+  'status' : string,
+  'side' : string,
+  'alertId' : string,
+  'receivedAt' : bigint,
+  'timestamp' : string,
+  'signal' : string,
+  'symbol' : string,
+  'reason' : string,
 }
-export interface TransformationInput {
-  'context' : Uint8Array,
-  'response' : http_request_result,
-}
-export interface TransformationOutput {
-  'status' : bigint,
-  'body' : Uint8Array,
-  'headers' : Array<http_header>,
-}
-export interface http_header { 'value' : string, 'name' : string }
-export interface http_request_result {
-  'status' : bigint,
-  'body' : Uint8Array,
-  'headers' : Array<http_header>,
-}
+export interface UserProfile { 'name' : string }
+export type UserRole = { 'admin' : null } |
+  { 'user' : null } |
+  { 'guest' : null };
 export interface _SERVICE {
-  'checkAndLogAlert' : ActorMethod<[number, number], undefined>,
-  'clearAlertHistory' : ActorMethod<[], undefined>,
-  'getAlertHistory' : ActorMethod<[], Array<AlertRecord>>,
-  'getBitcoinData' : ActorMethod<
-    [],
-    { 'rsi' : number, 'timestamp' : bigint, 'price' : number }
+  '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'getAuditLog' : ActorMethod<[], Array<AuditLogEntry>>,
+  'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
+  'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getKillSwitchStatus' : ActorMethod<[], boolean>,
+  'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'isCallerAdmin' : ActorMethod<[], boolean>,
+  'receiveWebhook' : ActorMethod<
+    [string, string, string, string, string, string],
+    string
   >,
-  'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
+  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'setKillSwitch' : ActorMethod<[boolean], undefined>,
+  'setWebhookSecret' : ActorMethod<[string], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];
