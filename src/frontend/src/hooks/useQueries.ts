@@ -1,24 +1,40 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AuditLogEntry } from "../backend.d";
+import type { AuditLogEntry, backendInterface } from "../backend.d";
 import { useActor } from "./useActor";
 
-// Legacy type exports retained for unused legacy components
-export interface ChartDataPoint {
-  date: string;
-  close: number;
-  open: number;
-  high: number;
-  low: number;
-  volume: number;
-  rsi: number | null;
-  macd: number | null;
-  signal: number | null;
-  histogram: number | null;
-  sma20: number | null;
-}
-export type Timeframe = "1m" | "1h" | "1D" | "1w";
+// ─── Factory helpers ───────────────────────────────────────────────────────────
 
-// ─── Audit Log ───────────────────────────────────────────────────────────────
+function useBackendQuery<T>(
+  key: string,
+  fetcher: (actor: backendInterface) => Promise<T>,
+  fallback: T,
+  interval?: number,
+) {
+  const { actor, isFetching } = useActor();
+  return useQuery<T>({
+    queryKey: [key],
+    queryFn: async () => (!actor ? fallback : fetcher(actor)),
+    enabled: !!actor && !isFetching,
+    ...(interval !== undefined ? { refetchInterval: interval } : {}),
+  });
+}
+
+function useBackendMutation<TArg = void>(
+  mutFn: (actor: backendInterface, arg: TArg) => Promise<void>,
+  invalidateKey: string,
+) {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (arg: TArg) => {
+      if (!actor) throw new Error("Not connected");
+      await mutFn(actor, arg);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: [invalidateKey] }),
+  });
+}
+
+// ─── Query hooks ──────────────────────────────────────────────────────────────
 
 export function useAuditLog() {
   const { actor, isFetching } = useActor();
@@ -26,73 +42,12 @@ export function useAuditLog() {
     queryKey: ["auditLog"],
     queryFn: async () => {
       if (!actor) return [];
-      const log = await actor.getAuditLog();
-      return [...log].reverse();
+      return [...(await actor.getAuditLog())].reverse();
     },
     enabled: !!actor && !isFetching,
     refetchInterval: 5000,
   });
 }
-
-// ─── Kill Switch ──────────────────────────────────────────────────────────────
-
-export function useKillSwitch() {
-  const { actor, isFetching } = useActor();
-  return useQuery<boolean>({
-    queryKey: ["killSwitch"],
-    queryFn: async () => {
-      if (!actor) return false;
-      return actor.getKillSwitchStatus();
-    },
-    enabled: !!actor && !isFetching,
-    refetchInterval: 10000,
-  });
-}
-
-export function useSetKillSwitch() {
-  const { actor } = useActor();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (status: boolean) => {
-      if (!actor) throw new Error("Not connected");
-      await actor.setKillSwitch(status);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["killSwitch"] });
-    },
-  });
-}
-
-// ─── Webhook Secret ───────────────────────────────────────────────────────────
-
-export function useSetWebhookSecret() {
-  const { actor } = useActor();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (secret: string) => {
-      if (!actor) throw new Error("Not connected");
-      await actor.setWebhookSecret(secret);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["hasWebhookSecret"] });
-    },
-  });
-}
-
-export function useHasWebhookSecret() {
-  const { actor, isFetching } = useActor();
-  return useQuery<boolean>({
-    queryKey: ["hasWebhookSecret"],
-    queryFn: async () => {
-      if (!actor) return false;
-      return actor.hasWebhookSecret();
-    },
-    enabled: !!actor && !isFetching,
-    refetchInterval: 30000,
-  });
-}
-
-// ─── Admin Check ─────────────────────────────────────────────────────────────
 
 export function useIsAdmin() {
   const { actor, isFetching } = useActor();
@@ -100,18 +55,73 @@ export function useIsAdmin() {
     queryKey: ["isAdmin"],
     queryFn: async () => {
       if (!actor) return false;
-      return actor.isCallerAdmin();
+      try {
+        return await actor.isCallerAdmin();
+      } catch {
+        return false;
+      }
     },
     enabled: !!actor && !isFetching,
   });
 }
 
-// ─── Test Webhook ─────────────────────────────────────────────────────────────
+export const useKillSwitch = () =>
+  useBackendQuery("killSwitch", (a) => a.getKillSwitchStatus(), false, 10000);
+export const useHasWebhookSecret = () =>
+  useBackendQuery(
+    "hasWebhookSecret",
+    (a) => a.hasWebhookSecret(),
+    false,
+    30000,
+  );
+export const useHasBinanceCredentials = () =>
+  useBackendQuery(
+    "hasBinanceCredentials",
+    (a) => a.hasBinanceCredentials(),
+    false,
+    30000,
+  );
+export const useDefaultOrderQuantity = () =>
+  useBackendQuery(
+    "defaultOrderQuantity",
+    (a) => a.getDefaultOrderQuantity(),
+    "",
+  );
+export const useTestnetMode = () =>
+  useBackendQuery("testnetMode", (a) => a.getTestnetMode(), true, 15000);
+
+// ─── Mutation hooks ───────────────────────────────────────────────────────────
+
+export const useSetKillSwitch = () =>
+  useBackendMutation((a, s: boolean) => a.setKillSwitch(s), "killSwitch");
+export const useSetWebhookSecret = () =>
+  useBackendMutation(
+    (a, s: string) => a.setWebhookSecret(s),
+    "hasWebhookSecret",
+  );
+export const useSetTestnetMode = () =>
+  useBackendMutation((a, m: boolean) => a.setTestnetMode(m), "testnetMode");
+export const useSetDefaultOrderQuantity = () =>
+  useBackendMutation(
+    (a, q: string) => a.setDefaultOrderQuantity(q),
+    "defaultOrderQuantity",
+  );
+export const useClearBinanceCredentials = () =>
+  useBackendMutation(
+    (a) => a.clearBinanceCredentials(),
+    "hasBinanceCredentials",
+  );
+export const useSetBinanceCredentials = () =>
+  useBackendMutation(
+    (a, p: { apiKey: string; apiSecret: string }) =>
+      a.setBinanceCredentials(p.apiKey, p.apiSecret),
+    "hasBinanceCredentials",
+  );
 
 export function useReceiveWebhook() {
   const { actor } = useActor();
   return useMutation({
-    mutationFn: async (params: {
+    mutationFn: async (p: {
       alertId: string;
       timestamp: string;
       symbol: string;
@@ -121,113 +131,13 @@ export function useReceiveWebhook() {
     }) => {
       if (!actor) throw new Error("Not connected");
       return actor.receiveWebhook(
-        params.alertId,
-        params.timestamp,
-        params.symbol,
-        params.side,
-        params.signal,
-        params.secretToken,
+        p.alertId,
+        p.timestamp,
+        p.symbol,
+        p.side,
+        p.signal,
+        p.secretToken,
       );
-    },
-  });
-}
-
-// ─── Binance Credentials ─────────────────────────────────────────────────────
-
-export function useHasBinanceCredentials() {
-  const { actor, isFetching } = useActor();
-  return useQuery<boolean>({
-    queryKey: ["hasBinanceCredentials"],
-    queryFn: async () => {
-      if (!actor) return false;
-      return actor.hasBinanceCredentials();
-    },
-    enabled: !!actor && !isFetching,
-    refetchInterval: 30000,
-  });
-}
-
-export function useSetBinanceCredentials() {
-  const { actor } = useActor();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (params: { apiKey: string; apiSecret: string }) => {
-      if (!actor) throw new Error("Not connected");
-      await actor.setBinanceCredentials(params.apiKey, params.apiSecret);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["hasBinanceCredentials"] });
-    },
-  });
-}
-
-export function useClearBinanceCredentials() {
-  const { actor } = useActor();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error("Not connected");
-      await actor.clearBinanceCredentials();
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["hasBinanceCredentials"] });
-    },
-  });
-}
-
-// ─── Default Order Quantity ───────────────────────────────────────────────────
-
-export function useDefaultOrderQuantity() {
-  const { actor, isFetching } = useActor();
-  return useQuery<string>({
-    queryKey: ["defaultOrderQuantity"],
-    queryFn: async () => {
-      if (!actor) return "";
-      return actor.getDefaultOrderQuantity();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
-
-export function useSetDefaultOrderQuantity() {
-  const { actor } = useActor();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (quantity: string) => {
-      if (!actor) throw new Error("Not connected");
-      await actor.setDefaultOrderQuantity(quantity);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["defaultOrderQuantity"] });
-    },
-  });
-}
-
-// ─── Testnet Mode ─────────────────────────────────────────────────────────────
-
-export function useTestnetMode() {
-  const { actor, isFetching } = useActor();
-  return useQuery<boolean>({
-    queryKey: ["testnetMode"],
-    queryFn: async () => {
-      if (!actor) return true;
-      return actor.getTestnetMode();
-    },
-    enabled: !!actor && !isFetching,
-    refetchInterval: 15000,
-  });
-}
-
-export function useSetTestnetMode() {
-  const { actor } = useActor();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (mode: boolean) => {
-      if (!actor) throw new Error("Not connected");
-      await actor.setTestnetMode(mode);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["testnetMode"] });
     },
   });
 }

@@ -17,16 +17,11 @@ export interface AuditLogEntry {
     symbol: string;
     reason: string;
 }
-export enum UserRole {
-    admin = "admin",
-    user = "user",
-    guest = "guest"
-}
+export type UserRole = "admin" | "user" | "guest";
 export interface backendInterface {
-    assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    _initializeAccessControlWithSecret(token: string): Promise<void>;
     clearBinanceCredentials(): Promise<void>;
     getAuditLog(): Promise<Array<AuditLogEntry>>;
-    getCallerUserRole(): Promise<UserRole>;
     getDefaultOrderQuantity(): Promise<string>;
     getKillSwitchStatus(): Promise<boolean>;
     getTestnetMode(): Promise<boolean>;

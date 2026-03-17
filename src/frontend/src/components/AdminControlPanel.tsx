@@ -42,7 +42,9 @@ import {
   useTestnetMode,
 } from "../hooks/useQueries";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const WEBHOOK_URL = `${window.location.origin}/webhook`;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function StorageBadge({ stored }: { stored: boolean | undefined }) {
   if (stored === undefined)
@@ -86,14 +88,13 @@ function NotAuthedPlaceholder() {
   );
 }
 
-// ─── Kill Switch Section ──────────────────────────────────────────────────────
+// ─── Kill Switch ──────────────────────────────────────────────────────────────
 
 function KillSwitchSection() {
   const { data: killSwitch, isLoading } = useKillSwitch();
   const setKillSwitch = useSetKillSwitch();
   const [pendingState, setPendingState] = useState<boolean | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-
   const armed = killSwitch === true;
 
   function handleToggleRequest(next: boolean) {
@@ -170,7 +171,6 @@ function KillSwitchSection() {
           </Button>
         </div>
       </div>
-
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent
           className="bg-card border-border/60"
@@ -198,11 +198,7 @@ function KillSwitchSection() {
             <Button
               onClick={handleConfirm}
               disabled={setKillSwitch.isPending}
-              className={`font-mono text-xs ${
-                pendingState
-                  ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                  : "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-              }`}
+              className={`font-mono text-xs ${pendingState ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-destructive hover:bg-destructive/90 text-destructive-foreground"}`}
               data-ocid="killswitch.confirm_button"
             >
               Confirm
@@ -221,7 +217,6 @@ function WebhookConfigSection() {
   const setWebhookSecret = useSetWebhookSecret();
   const [secret, setSecret] = useState("");
   const [showSecret, setShowSecret] = useState(false);
-  const webhookUrl = `${window.location.origin}/webhook`;
 
   async function handleSave() {
     if (!secret.trim()) {
@@ -242,22 +237,20 @@ function WebhookConfigSection() {
   }
 
   function handleCopy() {
-    navigator.clipboard.writeText(webhookUrl);
+    navigator.clipboard.writeText(WEBHOOK_URL);
     toast.success("Webhook URL copied");
   }
 
   return (
     <>
       <SectionHeading>Webhook Configuration</SectionHeading>
-
-      {/* Endpoint URL */}
       <div className="mb-4">
         <Label className="font-mono text-[11px] text-muted-foreground mb-1.5 block">
           Webhook Endpoint URL
         </Label>
         <div className="flex items-center gap-2">
           <code className="flex-1 rounded border border-border/40 bg-muted/20 px-3 py-2 font-mono text-[11px] text-accent truncate">
-            {webhookUrl}
+            {WEBHOOK_URL}
           </code>
           <Button
             variant="outline"
@@ -273,8 +266,6 @@ function WebhookConfigSection() {
           Paste this URL in your TradingView alert webhook field.
         </p>
       </div>
-
-      {/* Secret Token */}
       <div>
         <div className="mb-1.5 flex items-center justify-between">
           <Label className="font-mono text-[11px] text-muted-foreground">
@@ -353,6 +344,9 @@ function BinanceCredentialsSection() {
       setApiSecret("");
       toast.success("Binance credentials saved");
     } catch {
+      // Clear sensitive data from state on failure -- don't leave keys in React state
+      setApiKey("");
+      setApiSecret("");
       toast.error("Failed to save credentials");
     }
   }
@@ -376,7 +370,6 @@ function BinanceCredentialsSection() {
         </p>
         <StorageBadge stored={hasCreds} />
       </div>
-
       <div className="space-y-3">
         <div>
           <Label className="font-mono text-[11px] text-muted-foreground mb-1.5 block">
@@ -405,7 +398,6 @@ function BinanceCredentialsSection() {
             </button>
           </div>
         </div>
-
         <div>
           <Label className="font-mono text-[11px] text-muted-foreground mb-1.5 block">
             API Secret
@@ -433,7 +425,6 @@ function BinanceCredentialsSection() {
             </button>
           </div>
         </div>
-
         <div className="flex items-center gap-2 pt-1">
           <Button
             size="sm"
@@ -465,7 +456,6 @@ function BinanceCredentialsSection() {
           returned to the frontend.
         </p>
       </div>
-
       <Dialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
         <DialogContent
           className="bg-card border-border/60"
@@ -512,23 +502,16 @@ function TradingConfigSection() {
   const setOrderQty = useSetDefaultOrderQuantity();
   const [qty, setQty] = useState("");
   const [liveDialogOpen, setLiveDialogOpen] = useState(false);
-
   const isTestnet = testnetMode !== false;
 
   function handleTestnetToggle(checked: boolean) {
     if (!checked) {
-      // switching to LIVE — show warning
       setLiveDialogOpen(true);
     } else {
-      // switching to TESTNET — safe, no confirm needed
       setTestnetMode
         .mutateAsync(true)
-        .then(() => {
-          toast.success("Switched to Testnet mode");
-        })
-        .catch(() => {
-          toast.error("Failed to update mode");
-        });
+        .then(() => toast.success("Switched to Testnet mode"))
+        .catch(() => toast.error("Failed to update mode"));
     }
   }
 
@@ -543,7 +526,7 @@ function TradingConfigSection() {
   }
 
   async function handleSaveQty() {
-    const val = qty.trim() || orderQty || "";
+    const val = qty.trim();
     if (!val) {
       toast.error("Enter a valid order quantity");
       return;
@@ -560,8 +543,6 @@ function TradingConfigSection() {
   return (
     <>
       <SectionHeading>Trading Configuration</SectionHeading>
-
-      {/* Testnet Toggle */}
       <div className="flex items-center justify-between mb-5 p-3 rounded-lg border border-border/30 bg-muted/10">
         <div>
           <p className="text-sm font-medium">
@@ -585,8 +566,6 @@ function TradingConfigSection() {
           className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-emerald-600"
         />
       </div>
-
-      {/* Order Quantity */}
       <div>
         <Label className="font-mono text-[11px] text-muted-foreground mb-1.5 block">
           Default Order Quantity
@@ -606,7 +585,7 @@ function TradingConfigSection() {
           <Button
             size="sm"
             onClick={handleSaveQty}
-            disabled={setOrderQty.isPending}
+            disabled={setOrderQty.isPending || !qty.trim()}
             className="shrink-0 bg-accent/20 hover:bg-accent/30 text-accent border border-accent/30 font-mono text-xs"
             data-ocid="trading.save_button"
           >
@@ -620,7 +599,6 @@ function TradingConfigSection() {
           BTC quantity per trade (e.g. 0.001 = ~$60 at $60k BTC).
         </p>
       </div>
-
       <Dialog open={liveDialogOpen} onOpenChange={setLiveDialogOpen}>
         <DialogContent
           className="bg-card border-border/60"
@@ -725,25 +703,18 @@ export function AdminControlPanel() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-0">
-        {/* Kill Switch */}
         <div className="pb-6">
           <KillSwitchSection />
         </div>
         <Separator className="bg-border/30" />
-
-        {/* Webhook Config */}
         <div className="py-6">
           <WebhookConfigSection />
         </div>
         <Separator className="bg-border/30" />
-
-        {/* Binance Credentials */}
         <div className="py-6">
           <BinanceCredentialsSection />
         </div>
         <Separator className="bg-border/30" />
-
-        {/* Trading Config */}
         <div className="pt-6">
           <TradingConfigSection />
         </div>
