@@ -23,31 +23,26 @@ export const AuditLogEntry = IDL.Record({
   'symbol' : IDL.Text,
   'reason' : IDL.Text,
 });
-export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'clearBinanceCredentials' : IDL.Func([], [], []),
   'getAuditLog' : IDL.Func([], [IDL.Vec(AuditLogEntry)], ['query']),
-  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getDefaultOrderQuantity' : IDL.Func([], [IDL.Text], ['query']),
   'getKillSwitchStatus' : IDL.Func([], [IDL.Bool], ['query']),
   'getTestnetMode' : IDL.Func([], [IDL.Bool], ['query']),
-  'getUserProfile' : IDL.Func(
-      [IDL.Principal],
-      [IDL.Opt(UserProfile)],
-      ['query'],
-    ),
   'hasBinanceCredentials' : IDL.Func([], [IDL.Bool], ['query']),
+  'hasWebhookSecret' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'receiveWebhook' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
       [IDL.Text],
       [],
     ),
-  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'setBinanceCredentials' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'setDefaultOrderQuantity' : IDL.Func([IDL.Text], [], []),
   'setKillSwitch' : IDL.Func([IDL.Bool], [], []),
   'setTestnetMode' : IDL.Func([IDL.Bool], [], []),
   'setWebhookSecret' : IDL.Func([IDL.Text], [], []),
@@ -71,31 +66,26 @@ export const idlFactory = ({ IDL }) => {
     'symbol' : IDL.Text,
     'reason' : IDL.Text,
   });
-  const UserProfile = IDL.Record({ 'name' : IDL.Text });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'clearBinanceCredentials' : IDL.Func([], [], []),
     'getAuditLog' : IDL.Func([], [IDL.Vec(AuditLogEntry)], ['query']),
-    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getDefaultOrderQuantity' : IDL.Func([], [IDL.Text], ['query']),
     'getKillSwitchStatus' : IDL.Func([], [IDL.Bool], ['query']),
     'getTestnetMode' : IDL.Func([], [IDL.Bool], ['query']),
-    'getUserProfile' : IDL.Func(
-        [IDL.Principal],
-        [IDL.Opt(UserProfile)],
-        ['query'],
-      ),
     'hasBinanceCredentials' : IDL.Func([], [IDL.Bool], ['query']),
+    'hasWebhookSecret' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'receiveWebhook' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
         [IDL.Text],
         [],
       ),
-    'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'setBinanceCredentials' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'setDefaultOrderQuantity' : IDL.Func([IDL.Text], [], []),
     'setKillSwitch' : IDL.Func([IDL.Bool], [], []),
     'setTestnetMode' : IDL.Func([IDL.Bool], [], []),
     'setWebhookSecret' : IDL.Func([IDL.Text], [], []),

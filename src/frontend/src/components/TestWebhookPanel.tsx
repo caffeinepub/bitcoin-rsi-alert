@@ -1,16 +1,6 @@
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,127 +10,114 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, FlaskConical, Loader2 } from "lucide-react";
+import { FlaskConical, Loader2, Send } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { useReceiveWebhook } from "../hooks/useQueries";
 
+function generateAlertId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+const PINE_SCRIPT_EXAMPLE = `{
+  "alert_id": "{{timenow}}",
+  "symbol": "BTCUSDT",
+  "side": "BUY",
+  "signal": "long_entry",
+  "token": "YOUR_SECRET_TOKEN"
+}`;
+
 export function TestWebhookPanel() {
-  const [open, setOpen] = useState(false);
-  const [alertId, setAlertId] = useState(() => `test-${Date.now()}`);
-  const [timestamp, setTimestamp] = useState(() => new Date().toISOString());
+  const [alertId, setAlertId] = useState(generateAlertId);
   const [symbol, setSymbol] = useState("BTCUSDT");
   const [side, setSide] = useState("BUY");
-  const [signal, setSignal] = useState("RSI_OVERSOLD_MACD_CROSS");
+  const [signal, setSignal] = useState("test_signal");
   const [secretToken, setSecretToken] = useState("");
   const [response, setResponse] = useState<string | null>(null);
 
-  const receiveWebhook = useReceiveWebhook();
-  const qc = useQueryClient();
+  const sendWebhook = useReceiveWebhook();
 
-  const handleSubmit = async () => {
+  async function handleSend() {
+    if (!secretToken.trim()) {
+      toast.error("Secret token is required to test the webhook");
+      return;
+    }
     setResponse(null);
     try {
-      const result = await receiveWebhook.mutateAsync({
+      const result = await sendWebhook.mutateAsync({
         alertId,
-        timestamp,
-        symbol,
+        timestamp: new Date().toISOString(),
+        symbol: symbol.trim().toUpperCase(),
         side,
-        signal,
-        secretToken,
+        signal: signal.trim() || "test_signal",
+        secretToken: secretToken.trim(),
       });
       setResponse(result);
-      qc.invalidateQueries({ queryKey: ["auditLog"] });
-      // Reset alert ID for next test
-      setAlertId(`test-${Date.now()}`);
-      setTimestamp(new Date().toISOString());
+      setAlertId(generateAlertId());
+      toast.success("Webhook test sent");
     } catch (err) {
-      setResponse(`Error: ${err instanceof Error ? err.message : String(err)}`);
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setResponse(`Error: ${msg}`);
+      toast.error("Webhook test failed");
     }
-  };
+  }
+
+  const isAccepted =
+    response?.toLowerCase().includes("accepted") ||
+    response?.toLowerCase().includes("ok") ||
+    response?.toLowerCase().includes("success");
+  const isRejected = response !== null && !isAccepted;
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <Card
-        data-ocid="testwebhook.panel"
-        className="border-border/40 bg-card/40 backdrop-blur-sm"
-        style={{
-          boxShadow:
-            "0 0 0 1px oklch(0.2 0.025 264), 0 4px 24px oklch(0 0 0 / 0.4)",
-        }}
-      >
-        <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer select-none hover:bg-muted/10 rounded-t-xl transition-colors pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FlaskConical className="h-4 w-4 text-muted-foreground" />
-                <CardTitle className="text-sm font-semibold text-muted-foreground">
-                  Test Webhook
-                </CardTitle>
-                <span className="font-mono text-[10px] border border-border/40 rounded px-1.5 py-0.5 text-muted-foreground/60 tracking-widest uppercase">
-                  Dev Only
-                </span>
-              </div>
-              <ChevronDown
-                className={`h-4 w-4 text-muted-foreground/50 transition-transform duration-200 ${
-                  open ? "rotate-180" : ""
-                }`}
-              />
-            </div>
-            <CardDescription className="font-mono text-[11px]">
-              Send a test webhook alert directly to the backend canister
-            </CardDescription>
-          </CardHeader>
-        </CollapsibleTrigger>
-
-        <CollapsibleContent>
-          <CardContent className="pt-0 pb-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-              <div className="space-y-1.5">
-                <Label className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
+    <Card className="border-border/40 bg-card/60" data-ocid="testwebhook.panel">
+      <CardHeader className="pb-4">
+        <CardTitle className="font-mono text-sm flex items-center gap-2">
+          <FlaskConical className="h-4 w-4 text-accent" />
+          Test Webhook
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Form */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="font-mono text-[11px] text-muted-foreground mb-1.5 block">
                   Alert ID
                 </Label>
                 <Input
                   value={alertId}
                   onChange={(e) => setAlertId(e.target.value)}
-                  className="font-mono text-xs bg-background/50 border-border/60"
-                  placeholder="test-123456"
+                  className="font-mono text-[11px] bg-muted/20 border-border/40 focus:border-accent/40"
+                  data-ocid="testwebhook.input"
                 />
               </div>
-
-              <div className="space-y-1.5">
-                <Label className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
-                  Timestamp (ISO)
-                </Label>
-                <Input
-                  value={timestamp}
-                  onChange={(e) => setTimestamp(e.target.value)}
-                  className="font-mono text-xs bg-background/50 border-border/60"
-                  placeholder="2026-01-01T00:00:00.000Z"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
+              <div>
+                <Label className="font-mono text-[11px] text-muted-foreground mb-1.5 block">
                   Symbol
                 </Label>
                 <Input
                   value={symbol}
                   onChange={(e) => setSymbol(e.target.value)}
-                  className="font-mono text-xs bg-background/50 border-border/60"
                   placeholder="BTCUSDT"
+                  className="font-mono text-xs bg-muted/20 border-border/40 focus:border-accent/40"
                 />
               </div>
+            </div>
 
-              <div className="space-y-1.5">
-                <Label className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="font-mono text-[11px] text-muted-foreground mb-1.5 block">
                   Side
                 </Label>
                 <Select value={side} onValueChange={setSide}>
-                  <SelectTrigger className="font-mono text-xs bg-background/50 border-border/60">
+                  <SelectTrigger
+                    className="font-mono text-xs bg-muted/20 border-border/40 focus:border-accent/40"
+                    data-ocid="testwebhook.select"
+                  >
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-card border-border/60">
                     <SelectItem value="BUY" className="font-mono text-xs">
                       BUY
                     </SelectItem>
@@ -150,65 +127,118 @@ export function TestWebhookPanel() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-1.5">
-                <Label className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
+              <div>
+                <Label className="font-mono text-[11px] text-muted-foreground mb-1.5 block">
                   Signal
                 </Label>
                 <Input
                   value={signal}
                   onChange={(e) => setSignal(e.target.value)}
-                  className="font-mono text-xs bg-background/50 border-border/60"
-                  placeholder="RSI_OVERSOLD_MACD_CROSS"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
-                  Secret Token
-                </Label>
-                <Input
-                  type="password"
-                  value={secretToken}
-                  onChange={(e) => setSecretToken(e.target.value)}
-                  className="font-mono text-xs bg-background/50 border-border/60"
-                  placeholder="••••••••"
+                  placeholder="long_entry"
+                  className="font-mono text-xs bg-muted/20 border-border/40 focus:border-accent/40"
                 />
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <Button
-                data-ocid="testwebhook.submit_button"
-                onClick={handleSubmit}
-                disabled={receiveWebhook.isPending}
-                variant="outline"
-                className="border-accent/30 text-accent hover:bg-accent/10"
-              >
-                {receiveWebhook.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <FlaskConical className="mr-2 h-4 w-4" />
-                )}
-                Send Test Webhook
-              </Button>
+            <div>
+              <Label className="font-mono text-[11px] text-muted-foreground mb-1.5 block">
+                Secret Token
+              </Label>
+              <Input
+                type="password"
+                value={secretToken}
+                onChange={(e) => setSecretToken(e.target.value)}
+                placeholder="Your webhook secret token…"
+                className="font-mono text-xs bg-muted/20 border-border/40 focus:border-accent/40"
+                data-ocid="testwebhook.textarea"
+              />
+            </div>
 
-              {response !== null && (
-                <div
-                  className={`flex-1 rounded-lg border px-3 py-2 font-mono text-xs ${
-                    response.startsWith("Error")
-                      ? "border-destructive/40 bg-destructive/5 text-destructive"
-                      : "border-[oklch(0.55_0.22_145/0.4)] bg-[oklch(0.55_0.22_145/0.05)] text-[oklch(0.75_0.2_145)]"
-                  }`}
-                >
-                  <span className="opacity-50">→ </span>
-                  {response}
-                </div>
+            <Button
+              onClick={handleSend}
+              disabled={sendWebhook.isPending}
+              className="w-full bg-accent/20 hover:bg-accent/30 text-accent border border-accent/30 font-mono text-xs"
+              data-ocid="testwebhook.submit_button"
+            >
+              {sendWebhook.isPending ? (
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-3.5 w-3.5" />
               )}
+              Send Test Webhook
+            </Button>
+
+            {/* Response */}
+            {response !== null && (
+              <div
+                className={`rounded-lg border p-3 ${
+                  isAccepted
+                    ? "border-emerald-500/30 bg-emerald-500/5"
+                    : isRejected
+                      ? "border-red-500/30 bg-red-500/5"
+                      : "border-border/40 bg-muted/10"
+                }`}
+                data-ocid={
+                  isAccepted
+                    ? "testwebhook.success_state"
+                    : "testwebhook.error_state"
+                }
+              >
+                <div className="mb-1.5 flex items-center gap-1.5">
+                  <Badge
+                    className={`font-mono text-[9px] ${
+                      isAccepted
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        : "bg-red-500/20 text-red-400 border border-red-500/30"
+                    }`}
+                  >
+                    {isAccepted ? "RESPONSE" : "ERROR"}
+                  </Badge>
+                </div>
+                <pre className="font-mono text-[11px] text-foreground/80 whitespace-pre-wrap break-all">
+                  {response}
+                </pre>
+              </div>
+            )}
+          </div>
+
+          {/* Pine Script Example */}
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground mb-3">
+              TradingView Pine Script Alert Body
+            </p>
+            <div className="rounded-lg border border-border/30 bg-muted/10 p-4">
+              <pre className="font-mono text-[11px] text-accent/90 leading-relaxed whitespace-pre">
+                {PINE_SCRIPT_EXAMPLE}
+              </pre>
             </div>
-          </CardContent>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
+            <div className="mt-3 space-y-1.5">
+              <p className="font-mono text-[11px] text-muted-foreground/70">
+                Paste this JSON as the{" "}
+                <span className="text-accent">Message Body</span> in your
+                TradingView alert.
+              </p>
+              <p className="font-mono text-[11px] text-muted-foreground/70">
+                The <span className="text-accent">token</span> field must match
+                your configured webhook secret exactly.
+              </p>
+              <p className="font-mono text-[11px] text-muted-foreground/70">
+                <span className="text-accent">{"{{timenow}}"}</span> is a
+                TradingView variable that auto-generates a unique alert ID per
+                bar.
+              </p>
+              <div className="mt-3 rounded border border-border/30 bg-muted/20 p-2.5">
+                <p className="font-mono text-[10px] text-muted-foreground/60 uppercase tracking-wider mb-1">
+                  Webhook URL
+                </p>
+                <code className="font-mono text-[10px] text-accent/80 break-all">
+                  {window.location.origin}/webhook
+                </code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

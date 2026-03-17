@@ -2,8 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AuditLogEntry } from "../backend.d";
 import { useActor } from "./useActor";
 
-export type Timeframe = "1m" | "1h" | "1D" | "1w";
-
+// Legacy type exports retained for unused legacy components
 export interface ChartDataPoint {
   date: string;
   close: number;
@@ -17,6 +16,7 @@ export interface ChartDataPoint {
   histogram: number | null;
   sma20: number | null;
 }
+export type Timeframe = "1m" | "1h" | "1D" | "1w";
 
 // ─── Audit Log ───────────────────────────────────────────────────────────────
 
@@ -67,11 +67,28 @@ export function useSetKillSwitch() {
 
 export function useSetWebhookSecret() {
   const { actor } = useActor();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: async (secret: string) => {
       if (!actor) throw new Error("Not connected");
       await actor.setWebhookSecret(secret);
     },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["hasWebhookSecret"] });
+    },
+  });
+}
+
+export function useHasWebhookSecret() {
+  const { actor, isFetching } = useActor();
+  return useQuery<boolean>({
+    queryKey: ["hasWebhookSecret"],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.hasWebhookSecret();
+    },
+    enabled: !!actor && !isFetching,
+    refetchInterval: 30000,
   });
 }
 
@@ -154,6 +171,34 @@ export function useClearBinanceCredentials() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["hasBinanceCredentials"] });
+    },
+  });
+}
+
+// ─── Default Order Quantity ───────────────────────────────────────────────────
+
+export function useDefaultOrderQuantity() {
+  const { actor, isFetching } = useActor();
+  return useQuery<string>({
+    queryKey: ["defaultOrderQuantity"],
+    queryFn: async () => {
+      if (!actor) return "";
+      return actor.getDefaultOrderQuantity();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useSetDefaultOrderQuantity() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (quantity: string) => {
+      if (!actor) throw new Error("Not connected");
+      await actor.setDefaultOrderQuantity(quantity);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["defaultOrderQuantity"] });
     },
   });
 }

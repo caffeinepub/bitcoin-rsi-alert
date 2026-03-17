@@ -7,9 +7,6 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
-export interface UserProfile {
-    name: string;
-}
 export interface AuditLogEntry {
     status: string;
     side: string;
@@ -29,16 +26,16 @@ export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     clearBinanceCredentials(): Promise<void>;
     getAuditLog(): Promise<Array<AuditLogEntry>>;
-    getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getDefaultOrderQuantity(): Promise<string>;
     getKillSwitchStatus(): Promise<boolean>;
     getTestnetMode(): Promise<boolean>;
-    getUserProfile(user: Principal): Promise<UserProfile | null>;
     hasBinanceCredentials(): Promise<boolean>;
+    hasWebhookSecret(): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
     receiveWebhook(alertId: string, timestamp: string, symbol: string, side: string, signal: string, secretToken: string): Promise<string>;
-    saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setBinanceCredentials(apiKey: string, apiSecret: string): Promise<void>;
+    setDefaultOrderQuantity(quantity: string): Promise<void>;
     setKillSwitch(status: boolean): Promise<void>;
     setTestnetMode(mode: boolean): Promise<void>;
     setWebhookSecret(secret: string): Promise<void>;

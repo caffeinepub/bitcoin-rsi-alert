@@ -20,7 +20,6 @@ export interface AuditLogEntry {
   'symbol' : string,
   'reason' : string,
 }
-export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
@@ -29,19 +28,19 @@ export interface _SERVICE {
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'clearBinanceCredentials' : ActorMethod<[], undefined>,
   'getAuditLog' : ActorMethod<[], Array<AuditLogEntry>>,
-  'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getDefaultOrderQuantity' : ActorMethod<[], string>,
   'getKillSwitchStatus' : ActorMethod<[], boolean>,
   'getTestnetMode' : ActorMethod<[], boolean>,
-  'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'hasBinanceCredentials' : ActorMethod<[], boolean>,
+  'hasWebhookSecret' : ActorMethod<[], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'receiveWebhook' : ActorMethod<
     [string, string, string, string, string, string],
     string
   >,
-  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'setBinanceCredentials' : ActorMethod<[string, string], undefined>,
+  'setDefaultOrderQuantity' : ActorMethod<[string], undefined>,
   'setKillSwitch' : ActorMethod<[boolean], undefined>,
   'setTestnetMode' : ActorMethod<[boolean], undefined>,
   'setWebhookSecret' : ActorMethod<[string], undefined>,

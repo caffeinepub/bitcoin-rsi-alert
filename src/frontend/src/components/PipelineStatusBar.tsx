@@ -1,128 +1,129 @@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "motion/react";
-import { useKillSwitch } from "../hooks/useQueries";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useKillSwitch, useTestnetMode } from "../hooks/useQueries";
 
-interface PipelineNode {
-  label: string;
-  sub?: string;
-  active: boolean;
-  disabled?: boolean;
-  phase2?: boolean;
+function ArrowRight() {
+  return (
+    <svg
+      className="h-3 w-3 text-muted-foreground/40"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <title>Arrow</title>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5l7 7-7 7"
+      />
+    </svg>
+  );
 }
 
-export function PipelineStatusBar() {
-  const { data: armed, isLoading } = useKillSwitch();
+const PIPELINE_STEPS = ["TradingView", "Webhook", "Caffeine", "Binance"];
 
-  const nodes: PipelineNode[] = [
-    { label: "TradingView", sub: "Pine Script Alert", active: true },
-    { label: "Webhook", sub: "Static Token Auth", active: true },
-    {
-      label: "Caffeine Backend",
-      sub: "Kill Switch · Dedup · Rate Limit",
-      active: true,
-    },
-    { label: "Binance API", sub: "Phase 2", active: false, phase2: true },
-  ];
+export function PipelineStatusBar() {
+  const { identity } = useInternetIdentity();
+  const isAuthed = !!identity;
+
+  const { data: killSwitch, isLoading: ksLoading } = useKillSwitch();
+  const { data: testnetMode, isLoading: tmLoading } = useTestnetMode();
+
+  const armed = killSwitch === true;
+  const testnet = testnetMode !== false;
 
   return (
     <div
-      data-ocid="pipeline.status_panel"
-      className="rounded-xl border border-border/50 bg-card/60 p-4 backdrop-blur-sm card-glow"
+      className="rounded-lg border border-border/40 bg-card/60 backdrop-blur-sm px-4 py-3"
+      data-ocid="pipeline.panel"
     >
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        {/* Pipeline state badge */}
-        <div className="shrink-0">
-          {isLoading ? (
-            <Skeleton className="h-8 w-32" />
+      <div className="flex flex-wrap items-center gap-4">
+        {/* Kill Switch Badge */}
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+            Kill Switch
+          </span>
+          {!isAuthed ? (
+            <Badge
+              variant="outline"
+              className="font-mono text-[10px] border-muted/30 text-muted-foreground"
+            >
+              —
+            </Badge>
+          ) : ksLoading ? (
+            <Skeleton className="h-5 w-20 rounded-full" />
+          ) : armed ? (
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              key="armed"
+            >
+              <Badge className="font-mono text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2.5">
+                <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
+                ARMED
+              </Badge>
+            </motion.div>
           ) : (
             <motion.div
-              key={String(armed)}
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.3 }}
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              key="disarmed"
             >
-              <div
-                className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 font-mono text-xs font-bold tracking-widest uppercase ${
-                  armed
-                    ? "border-[oklch(0.55_0.22_145/0.5)] bg-[oklch(0.55_0.22_145/0.1)] text-[oklch(0.75_0.2_145)]"
-                    : "border-destructive/40 bg-destructive/10 text-destructive"
-                }`}
-              >
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    armed
-                      ? "bg-[oklch(0.75_0.2_145)] animate-pulse"
-                      : "bg-destructive"
-                  }`}
-                />
-                {armed ? "ARMED" : "DISARMED"}
-              </div>
+              <Badge className="font-mono text-[10px] bg-red-500/15 text-red-400 border border-red-500/30 px-2.5">
+                <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-red-400 inline-block" />
+                DISARMED
+              </Badge>
             </motion.div>
           )}
         </div>
 
-        {/* Node flow */}
-        <div className="flex flex-1 items-center gap-1 overflow-x-auto pb-1">
-          {nodes.map((node, i) => (
-            <div key={node.label} className="flex items-center gap-1 shrink-0">
-              <NodePill node={node} />
-              {i < nodes.length - 1 && (
-                <div className="flex items-center gap-0.5 px-0.5">
-                  <div className="h-px w-3 bg-border/60" />
-                  <svg
-                    className="h-2.5 w-2.5 text-muted-foreground/40"
-                    fill="currentColor"
-                    viewBox="0 0 6 6"
-                    aria-hidden="true"
-                  >
-                    <title>Arrow</title>
-                    <path d="M0 0l6 3-6 3V0z" />
-                  </svg>
-                  <div className="h-px w-3 bg-border/60" />
-                </div>
-              )}
-            </div>
+        <div className="h-4 w-px bg-border/40" />
+
+        {/* Mode Badge */}
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+            Mode
+          </span>
+          {!isAuthed ? (
+            <Badge
+              variant="outline"
+              className="font-mono text-[10px] border-muted/30 text-muted-foreground"
+            >
+              —
+            </Badge>
+          ) : tmLoading ? (
+            <Skeleton className="h-5 w-20 rounded-full" />
+          ) : testnet ? (
+            <Badge className="font-mono text-[10px] bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2.5">
+              <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-amber-400 inline-block" />
+              TESTNET
+            </Badge>
+          ) : (
+            <Badge className="font-mono text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2.5">
+              <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
+              LIVE
+            </Badge>
+          )}
+        </div>
+
+        <div className="h-4 w-px bg-border/40" />
+
+        {/* Pipeline flow */}
+        <div className="flex items-center gap-1.5 ml-auto">
+          {PIPELINE_STEPS.map((step, i) => (
+            <span key={step} className="flex items-center gap-1.5">
+              <span className="font-mono text-[10px] text-muted-foreground/70 tracking-wide">
+                {step}
+              </span>
+              {i < PIPELINE_STEPS.length - 1 && <ArrowRight />}
+            </span>
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function NodePill({ node }: { node: PipelineNode }) {
-  return (
-    <div
-      className={`flex flex-col items-center rounded-lg border px-3 py-2 text-center ${
-        node.phase2
-          ? "border-border/30 bg-muted/20 opacity-40"
-          : node.active
-            ? "border-accent/30 bg-accent/5"
-            : "border-border/40 bg-muted/30"
-      }`}
-    >
-      <div className="flex items-center gap-1.5">
-        <span
-          className={`font-mono text-[11px] font-semibold ${
-            node.phase2 ? "text-muted-foreground" : "text-foreground"
-          }`}
-        >
-          {node.label}
-        </span>
-        {node.phase2 && (
-          <Badge
-            variant="outline"
-            className="h-4 px-1 font-mono text-[9px] tracking-widest text-muted-foreground border-border/40"
-          >
-            PHASE 2
-          </Badge>
-        )}
-      </div>
-      {node.sub && (
-        <p className="mt-0.5 font-mono text-[9px] text-muted-foreground/60 leading-tight">
-          {node.sub}
-        </p>
-      )}
     </div>
   );
 }
