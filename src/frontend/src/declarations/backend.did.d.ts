@@ -27,18 +27,23 @@ export type UserRole = { 'admin' : null } |
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'clearBinanceCredentials' : ActorMethod<[], undefined>,
   'getAuditLog' : ActorMethod<[], Array<AuditLogEntry>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getKillSwitchStatus' : ActorMethod<[], boolean>,
+  'getTestnetMode' : ActorMethod<[], boolean>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'hasBinanceCredentials' : ActorMethod<[], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'receiveWebhook' : ActorMethod<
     [string, string, string, string, string, string],
     string
   >,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'setBinanceCredentials' : ActorMethod<[string, string], undefined>,
   'setKillSwitch' : ActorMethod<[boolean], undefined>,
+  'setTestnetMode' : ActorMethod<[boolean], undefined>,
   'setWebhookSecret' : ActorMethod<[string], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

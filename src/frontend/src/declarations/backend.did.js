@@ -28,15 +28,18 @@ export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'clearBinanceCredentials' : IDL.Func([], [], []),
   'getAuditLog' : IDL.Func([], [IDL.Vec(AuditLogEntry)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getKillSwitchStatus' : IDL.Func([], [IDL.Bool], ['query']),
+  'getTestnetMode' : IDL.Func([], [IDL.Bool], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'hasBinanceCredentials' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'receiveWebhook' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
@@ -44,7 +47,9 @@ export const idlService = IDL.Service({
       [],
     ),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'setBinanceCredentials' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'setKillSwitch' : IDL.Func([IDL.Bool], [], []),
+  'setTestnetMode' : IDL.Func([IDL.Bool], [], []),
   'setWebhookSecret' : IDL.Func([IDL.Text], [], []),
 });
 
@@ -71,15 +76,18 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'clearBinanceCredentials' : IDL.Func([], [], []),
     'getAuditLog' : IDL.Func([], [IDL.Vec(AuditLogEntry)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getKillSwitchStatus' : IDL.Func([], [IDL.Bool], ['query']),
+    'getTestnetMode' : IDL.Func([], [IDL.Bool], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'hasBinanceCredentials' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'receiveWebhook' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
@@ -87,7 +95,9 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'setBinanceCredentials' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'setKillSwitch' : IDL.Func([IDL.Bool], [], []),
+    'setTestnetMode' : IDL.Func([IDL.Bool], [], []),
     'setWebhookSecret' : IDL.Func([IDL.Text], [], []),
   });
 };

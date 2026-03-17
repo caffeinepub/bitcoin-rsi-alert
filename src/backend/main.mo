@@ -5,17 +5,24 @@ import Int "mo:core/Int";
 import Text "mo:core/Text";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
-import Migration "migration";
+
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
 // Use migration function to drop old persistent data
-(with migration = Migration.run)
+
 actor {
   // Kill switch defaults to false (OFF = trading disabled). Must be explicitly set to true to allow trades.
   var killSwitch = false;
   var webhookSecret : ?Text = null;
   let accessControlState = AccessControl.initState();
+
+  // Binance credentials stored as opaque blobs in stable memory
+  var binanceApiKey : ?Text = null;
+  var binanceApiSecret : ?Text = null;
+
+  // Testnet mode flag (defaults true = testnet, must be explicitly set false for live)
+  var testnetMode : Bool = true;
 
   type AuditLogEntry = {
     alertId : Text;
@@ -96,6 +103,48 @@ actor {
       Runtime.trap("Unauthorized: Only admins can view audit log");
     };
     auditLog.toArray();
+  };
+
+  // Binance credential management - admin only
+  public shared ({ caller }) func setBinanceCredentials(apiKey : Text, apiSecret : Text) : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can set Binance credentials");
+    };
+    binanceApiKey := ?apiKey;
+    binanceApiSecret := ?apiSecret;
+  };
+
+  public query ({ caller }) func hasBinanceCredentials() : async Bool {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can check Binance credentials");
+    };
+    switch (binanceApiKey, binanceApiSecret) {
+      case (?_, ?_) { true };
+      case _ { false };
+    };
+  };
+
+  public shared ({ caller }) func clearBinanceCredentials() : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can clear Binance credentials");
+    };
+    binanceApiKey := null;
+    binanceApiSecret := null;
+  };
+
+  // Testnet mode management - admin only
+  public shared ({ caller }) func setTestnetMode(mode : Bool) : async () {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can set testnet mode");
+    };
+    testnetMode := mode;
+  };
+
+  public query ({ caller }) func getTestnetMode() : async Bool {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view testnet mode");
+    };
+    testnetMode;
   };
 
   func cleanOldEntries() {

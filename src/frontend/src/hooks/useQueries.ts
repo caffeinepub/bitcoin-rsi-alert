@@ -114,3 +114,75 @@ export function useReceiveWebhook() {
     },
   });
 }
+
+// ─── Binance Credentials ─────────────────────────────────────────────────────
+
+export function useHasBinanceCredentials() {
+  const { actor, isFetching } = useActor();
+  return useQuery<boolean>({
+    queryKey: ["hasBinanceCredentials"],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.hasBinanceCredentials();
+    },
+    enabled: !!actor && !isFetching,
+    refetchInterval: 30000,
+  });
+}
+
+export function useSetBinanceCredentials() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { apiKey: string; apiSecret: string }) => {
+      if (!actor) throw new Error("Not connected");
+      await actor.setBinanceCredentials(params.apiKey, params.apiSecret);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["hasBinanceCredentials"] });
+    },
+  });
+}
+
+export function useClearBinanceCredentials() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error("Not connected");
+      await actor.clearBinanceCredentials();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["hasBinanceCredentials"] });
+    },
+  });
+}
+
+// ─── Testnet Mode ─────────────────────────────────────────────────────────────
+
+export function useTestnetMode() {
+  const { actor, isFetching } = useActor();
+  return useQuery<boolean>({
+    queryKey: ["testnetMode"],
+    queryFn: async () => {
+      if (!actor) return true;
+      return actor.getTestnetMode();
+    },
+    enabled: !!actor && !isFetching,
+    refetchInterval: 15000,
+  });
+}
+
+export function useSetTestnetMode() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (mode: boolean) => {
+      if (!actor) throw new Error("Not connected");
+      await actor.setTestnetMode(mode);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["testnetMode"] });
+    },
+  });
+}

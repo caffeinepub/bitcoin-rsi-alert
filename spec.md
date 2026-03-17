@@ -1,38 +1,36 @@
-# TV Webhook Trading Pipeline — Version 14 Phase 1
+# TV Webhook Trading Pipeline
 
 ## Current State
-The backend has a minimal alert logging system (RSI-based). The authorization and http-outcalls components are already selected. The frontend (Version 13) shows a blueprint/architecture overview of the pipeline without real backend wiring.
+- Phase 1 is complete: webhook receiver, kill switch, deduplication by alert_id (90s TTL), audit log (last 100 entries), webhook secret token validation
+- Authorization (role-based, admin-only for sensitive ops) is integrated
+- No Binance credential storage exists yet
+- No testnet/live mode toggle exists yet
+- Webhook receiver currently logs accepted alerts but does NOT execute any Binance trade
 
 ## Requested Changes (Diff)
 
 ### Add
-- `receiveWebhook` endpoint: accepts JSON payload with `alert_id`, `timestamp`, `symbol`, `side`, `signal`, `secret_token`
-- Secret token validation: reject if token does not match stored secret
-- Kill switch: stable boolean, defaults OFF on deploy; `setKillSwitch(bool)` admin-only
-- Deduplication: store seen `alert_id` values with TTL of 90 seconds; reject duplicates
-- Audit log: last 100 webhook alerts stored (no secrets), with timestamp, symbol, side, signal, status (accepted/rejected + reason)
-- `setWebhookSecret(text)` admin-only function to update the secret token
-- `getAuditLog()` query returning last 100 entries
-- `getKillSwitchStatus()` query
-- Frontend: Pipeline status panel, kill switch toggle (admin only), webhook secret input (masked), live audit log table
+- `binanceApiKey` and `binanceApiSecret` stored as `?Text` opaque blobs in backend stable memory
+- `testnestMode` boolean flag (defaults `true` = testnet, must be explicitly set to false for live)
+- `setBinanceCredentials(apiKey, apiSecret)` admin-only function to store credentials
+- `hasBinanceCredentials()` admin-only query returning Bool (masked check, never returns actual keys)
+- `setTestnetMode(Bool)` admin-only function
+- `getTestnetMode()` admin-only query
+- Frontend: "Binance Credentials" section in AdminControlPanel with masked API key + secret inputs and save button
+- Frontend: Testnet/Live mode toggle with clear visual indicator
 
 ### Modify
-- Replace the old minimal `checkAndLogAlert` / `alertHistory` with the new webhook-based audit log
-- Backend actor incorporates the authorization mixin for admin-only access control
+- AdminControlPanel to include two new sections: Binance credentials and testnet mode
+- AuditLogEntry `reason` field to include testnet/live mode context when available
 
 ### Remove
-- Old RSI-based `checkAndLogAlert` and `clearAlertHistory` functions (replaced by new pipeline)
+- Nothing removed
 
 ## Implementation Plan
-1. Rewrite `main.mo` with:
-   - Stable variables: `killSwitch`, `webhookSecret`, `auditLog` buffer (max 100), `seenAlertIds` map with timestamps
-   - `receiveWebhook` public shared func: validate secret, check kill switch, deduplicate, log with status
-   - `setKillSwitch` admin-only, `setWebhookSecret` admin-only
-   - `getAuditLog` and `getKillSwitchStatus` query funcs
-   - TTL cleanup on each `receiveWebhook` call (remove alert_ids older than 90s)
-2. Frontend page with:
-   - Pipeline status indicator (TradingView → Webhook → Caffeine → Binance)
-   - Kill switch toggle (calls `setKillSwitch`)
-   - Webhook secret field (masked, calls `setWebhookSecret`)
-   - Audit log table (calls `getAuditLog`, refreshes every 5s)
-   - Status badges per log entry (accepted/rejected)
+1. Add `binanceApiKey`, `binanceApiSecret` as `var ?Text` in backend
+2. Add `testnetMode` as `var Bool = true` in backend
+3. Add `setBinanceCredentials` (admin only), `hasBinanceCredentials` (admin only query)
+4. Add `setTestnetMode` / `getTestnetMode` (admin only)
+5. Wire new backend functions into frontend queries/mutations
+6. Add Binance credentials section to AdminControlPanel (masked inputs, save button, credential status indicator)
+7. Add testnet/live mode toggle to AdminControlPanel with confirmation on switching to live

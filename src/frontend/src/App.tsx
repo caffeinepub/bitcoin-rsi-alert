@@ -59,7 +59,7 @@ export default function App() {
                 Trading Pipeline Admin
               </h1>
               <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-                TradingView → Webhook → Caffeine → Binance · Phase 1
+                TradingView → Webhook → Caffeine → Binance · Phase 2a
               </p>
             </div>
             <div className="ml-auto">
